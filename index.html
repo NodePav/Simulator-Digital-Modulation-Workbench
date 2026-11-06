@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10263f">
+  <meta name="description" content="MODLAB: simulador web responsivo de modulações digitais por Pavão Engenharia.">
+  <title>MODLAB — Simulador de Modulação Digital</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --navy: #10263f;
+      --navy-2: #193b5a;
+      --cyan: #16c5d8;
+      --blue: #2878b5;
+      --green: #20a486;
+      --amber: #e9a23b;
+      --ink: #20364b;
+      --muted: #718096;
+      --line: #dce5ed;
+      --paper: #ffffff;
+      --bg: #eef2f6;
+      --red: #bd4b43;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); }
+    button, input, select { font: inherit; }
+    .topbar {
+      min-height: 82px; padding: 14px clamp(16px, 3vw, 36px);
+      display: flex; align-items: center; gap: 14px; color: white;
+      background: var(--navy);
+    }
+    .brand-mark {
+      width: 48px; height: 48px; flex: 0 0 48px; border: 2px solid var(--cyan);
+      border-radius: 50%; display: grid; place-items: center; color: var(--cyan);
+      font-size: 23px; font-weight: 800;
+    }
+    .brand h1 { margin: 0; font-size: 21px; letter-spacing: .08em; }
+    .brand p { margin: 3px 0 0; color: #b7c9d8; font-size: 10px; font-weight: 700; letter-spacing: .12em; }
+    .byline { margin-left: auto; text-align: right; color: var(--cyan); font-size: 11px; font-weight: 700; line-height: 1.6; }
+    .byline span { display: block; color: #b7c9d8; font-weight: 500; }
+    .shell { max-width: 1540px; margin: auto; padding: 20px; }
+    .intro { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 0 0 16px; }
+    .intro h2 { margin: 0; color: var(--navy); font-size: clamp(20px, 3vw, 27px); }
+    .intro p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+    .status { color: var(--green); font: 700 11px Consolas, monospace; white-space: nowrap; }
+    .layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 16px; align-items: start; }
+    .sidebar { padding: 16px; border-radius: 12px; background: var(--navy); color: white; }
+    .side-heading { margin: 0 0 10px; color: var(--cyan); font-size: 11px; letter-spacing: .08em; }
+    .field-label { display: block; margin: 12px 0 5px; color: #d1dce5; font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+    .control {
+      width: 100%; min-height: 39px; padding: 8px 10px; border: 1px solid #d5e0e8;
+      border-radius: 6px; outline: none; background: #f5f8fa; color: var(--navy);
+    }
+    .control:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px #16c5d833; }
+    .scheme-info { margin-top: 10px; padding: 11px; border-radius: 8px; background: var(--navy-2); }
+    .scheme-info h3 { margin: 0 0 7px; color: white; font-size: 14px; }
+    .scheme-info p { margin: 6px 0 0; color: #d7e3ec; font-size: 11px; line-height: 1.5; }
+    .scheme-info b { color: var(--cyan); }
+    .primary, .secondary {
+      min-height: 40px; padding: 9px 12px; border: 0; border-radius: 6px;
+      cursor: pointer; font-weight: 750;
+    }
+    .primary { width: 100%; margin-top: 14px; color: var(--navy); background: var(--cyan); }
+    .primary:hover { background: #52d8e4; }
+    .secondary { color: var(--navy); background: #e4edf3; }
+    .secondary:hover { background: #d2e0e9; }
+    .auto-note { margin: 8px 0 0; color: #91a8ba; text-align: center; font: 10px Consolas, monospace; }
+    .main { min-width: 0; }
+    .metrics-card, .panel, .tabs {
+      border: 1px solid var(--line); border-radius: 10px; background: var(--paper);
+      box-shadow: 0 2px 8px #15324b0a;
+    }
+    .metrics-title { padding: 9px 12px; color: white; background: var(--navy-2); font-size: 11px; font-weight: 750; letter-spacing: .06em; }
+    .metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; padding: 12px; }
+    .metric { padding: 10px; border: 1px solid #e6edf2; border-radius: 7px; }
+    .metric span { display: block; color: var(--muted); font-size: 10px; }
+    .metric strong { display: block; margin-top: 4px; color: var(--navy); font: 700 16px Consolas, monospace; overflow-wrap: anywhere; }
+    .metric small { display: block; margin-top: 3px; color: var(--muted); font-size: 10px; }
+    .tabs { margin-top: 12px; overflow: hidden; }
+    .tab-list { display: flex; gap: 4px; overflow-x: auto; padding: 8px 8px 0; border-bottom: 1px solid var(--line); }
+    .tab-button { flex: 0 0 auto; padding: 11px 14px; border: 0; border-radius: 6px 6px 0 0; color: var(--muted); background: transparent; cursor: pointer; font-weight: 700; font-size: 12px; }
+    .tab-button[aria-selected="true"] { color: var(--blue); background: #edf5fa; }
+    .tab-panel { display: none; padding: 14px; }
+    .tab-panel.active { display: block; }
+    .chart-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .panel { padding: 12px; }
+    .panel h3 { margin: 0 0 4px; color: var(--navy); font-size: 14px; }
+    .panel .explain { min-height: 32px; margin: 0 0 8px; color: var(--muted); font-size: 11px; line-height: 1.45; }
+    canvas.chart { display: block; width: 100%; height: 250px; }
+    #constellation { height: min(60vh, 500px); min-height: 300px; }
+    .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 7px; color: var(--muted); font-size: 11px; }
+    .legend i { display: inline-block; width: 10px; height: 10px; margin-right: 5px; border-radius: 50%; }
+    .notice { margin-top: 10px; padding: 10px 12px; border-left: 3px solid var(--amber); border-radius: 4px; background: #fff8eb; color: #654b20; font-size: 11px; line-height: 1.5; }
+    .help-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .help-card { padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: #fbfdfe; }
+    .help-card h3 { margin: 0 0 7px; color: var(--blue); font-size: 13px; }
+    .help-card p, .help-card li { color: var(--ink); font-size: 12px; line-height: 1.55; }
+    .help-card p { margin: 0; }
+    .help-card ul { margin: 0; padding-left: 18px; }
+    footer { padding: 18px 8px 4px; color: var(--muted); text-align: center; font-size: 11px; }
+    .error { display: none; margin: 0 0 12px; padding: 10px 12px; border-radius: 7px; background: #fff0ef; color: var(--red); font-size: 12px; }
+    .error.show { display: block; }
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+      .sidebar .side-heading, .sidebar .scheme-select, .sidebar .scheme-info, .sidebar .primary, .sidebar .auto-note, .sidebar .divider { grid-column: 1 / -1; }
+      .scheme-info { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+      .scheme-info h3 { grid-column: 1 / -1; }
+      .primary { margin-top: 12px; }
+      .intro { align-items: start; flex-direction: column; }
+    }
+    @media (max-width: 560px) {
+      .topbar { min-height: 72px; padding: 10px 14px; gap: 9px; }
+      .brand-mark { width: 40px; height: 40px; flex-basis: 40px; font-size: 19px; }
+      .brand h1 { font-size: 18px; }
+      .brand p { font-size: 8px; }
+      .byline { max-width: 112px; font-size: 9px; }
+      .byline span { font-size: 8px; }
+      .shell { padding: 12px; }
+      .sidebar { padding: 12px; }
+      .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; padding: 8px; }
+      .metric { padding: 8px; }
+      .metric strong { font-size: 14px; }
+      .tab-panel { padding: 9px; }
+      .panel { padding: 9px; }
+      canvas.chart { height: 220px; }
+      #constellation { min-height: 260px; }
+      .help-grid { grid-template-columns: 1fr; }
+      .scheme-info { grid-template-columns: 1fr; }
+      .scheme-info h3 { grid-column: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-mark" aria-hidden="true">∿</div>
+    <div class="brand">
+      <h1>MODLAB</h1>
+      <p>DIGITAL MODULATION WORKBENCH</p>
+    </div>
+    <div class="byline">PAVÃO ENGENHARIA<span>Proprietário e criador: Josué Pavão</span></div>
+  </header>
+
+  <main class="shell">
+    <section class="intro">
+      <div>
+        <h2>Estação de análise de modulações digitais</h2>
+        <p>Simule sinais, explore constelações e compare parâmetros em tempo real.</p>
+      </div>
+      <div id="status" class="status" role="status">● SISTEMA PRONTO</div>
+    </section>
+
+    <div class="layout">
+      <aside class="sidebar" aria-label="Configuração da simulação">
+        <h2 class="side-heading">CONFIGURAÇÃO</h2>
+        <label class="field-label scheme-select" for="scheme">TÉCNICA DE MODULAÇÃO</label>
+        <select id="scheme" class="control scheme-select" aria-label="Técnica de modulação"></select>
+        <section id="scheme-info" class="scheme-info" aria-live="polite"></section>
+        <div class="divider" style="height:1px;background:#36516a;margin:13px 0"></div>
+        <h2 class="side-heading">PARÂMETROS DO SINAL</h2>
+        <label class="field-label" for="bit-count">BITS DA SEQUÊNCIA</label>
+        <input id="bit-count" class="control" type="number" min="8" max="50000" step="1" value="1200">
+        <label class="field-label" for="bit-rate">TAXA DE BITS Rb (bit/s)</label>
+        <input id="bit-rate" class="control" type="number" min="1" step="any" value="1000">
+        <label class="field-label" for="carrier">PORTADORA fc (Hz)</label>
+        <input id="carrier" class="control" type="number" min="1" step="any" value="5000">
+        <label class="field-label" for="rolloff">ROLL-OFF α (0–1)</label>
+        <input id="rolloff" class="control" type="number" min="0" max="1" step="0.05" value="0.35">
+        <label class="field-label" for="ebn0">Eb/N₀ (dB)</label>
+        <input id="ebn0" class="control" type="number" min="-30" max="60" step="1" value="10">
+        <button id="new-bits" class="primary" type="button">↻ Gerar nova sequência</button>
+        <p class="auto-note">ATUALIZAÇÃO AUTOMÁTICA</p>
+      </aside>
+
+      <section class="main" aria-label="Resultados da simulação">
+        <div id="error" class="error" role="alert"></div>
+        <section class="metrics-card" aria-label="Métricas calculadas">
+          <div class="metrics-title">LIVE TELEMETRY / MEMORIAL DE CÁLCULO</div>
+          <div id="metrics" class="metrics"></div>
+        </section>
+
+        <section class="tabs">
+          <div class="tab-list" role="tablist" aria-label="Visualizações do simulador">
+            <button class="tab-button" id="tab-wave-button" role="tab" aria-selected="true" aria-controls="tab-wave">〰 Forma de onda</button>
+            <button class="tab-button" id="tab-iq-button" role="tab" aria-selected="false" aria-controls="tab-iq">⌖ Constelação I/Q</button>
+            <button class="tab-button" id="tab-dashboard-button" role="tab" aria-selected="false" aria-controls="tab-dashboard">▥ Comparativo</button>
+            <button class="tab-button" id="tab-help-button" role="tab" aria-selected="false" aria-controls="tab-help">? Ajuda</button>
+          </div>
+          <div id="tab-wave" class="tab-panel active" role="tabpanel" aria-labelledby="tab-wave-button">
+            <div class="chart-grid">
+              <article class="panel">
+                <h3>1. Sequência digital de entrada</h3>
+                <p class="explain">Cada degrau é um bit no tempo: nível 0 = bit zero; nível 1 = bit um. A janela mostra até 12 períodos de símbolo.</p>
+                <canvas id="bits-chart" class="chart" aria-label="Gráfico temporal da sequência binária"></canvas>
+              </article>
+              <article class="panel">
+                <h3 id="wave-title">2. Sinal modulado em passabanda</h3>
+                <p class="explain">Azul: sinal ideal. Laranja: sinal recebido com ruído AWGN. O eixo vertical é a amplitude instantânea da portadora modulada.</p>
+                <canvas id="wave-chart" class="chart" aria-label="Gráfico temporal do sinal modulado"></canvas>
+                <div class="legend">
+                  <span><i style="background:var(--blue)"></i>Sinal modulado ideal (sem ruído)</span>
+                  <span id="noise-legend"><i style="background:var(--amber)"></i>Sinal recebido + AWGN</span>
+                </div>
+              </article>
+            </div>
+          </div>
+          <div id="tab-iq" class="tab-panel" role="tabpanel" aria-labelledby="tab-iq-button">
+            <article class="panel">
+              <h3 id="iq-title">Constelação I/Q</h3>
+              <p class="explain">Eixo horizontal: I (componente em fase). Eixo vertical: Q (quadratura). Coordenadas normalizadas; estados coincidentes ficam sobrepostos.</p>
+              <canvas id="constellation" class="chart" aria-label="Diagrama de constelação em I e Q"></canvas>
+              <div class="legend">
+                <span><i style="background:var(--blue)"></i>Símbolos gerados</span>
+                <span><i style="background:var(--amber)"></i>Estados distintos observados</span>
+              </div>
+              <div id="iq-note" class="notice"></div>
+            </article>
+          </div>
+          <div id="tab-dashboard" class="tab-panel" role="tabpanel" aria-labelledby="tab-dashboard-button">
+            <div class="chart-grid">
+              <article class="panel">
+                <h3>1. Taxa de símbolos — Rs = Rb/k</h3>
+                <p class="explain">Símbolos transmitidos por segundo (baud). Com Rb fixo, mais bits por símbolo reduzem a taxa de símbolos.</p>
+                <canvas id="rs-chart" class="chart" aria-label="Comparação da taxa de símbolos"></canvas>
+              </article>
+              <article class="panel">
+                <h3>2. Eficiência espectral estimada — η ≈ k/(1+α)</h3>
+                <p class="explain">Estimativa em bit/s/Hz; barras maiores representam mais bits por segundo por hertz segundo este modelo simplificado.</p>
+                <canvas id="eff-chart" class="chart" aria-label="Comparação da eficiência espectral estimada"></canvas>
+              </article>
+            </div>
+            <div class="notice">A banda aproximada usa B ≈ (1+α)Rs e não representa uma máscara normativa. Em FSK/MSK, a largura ocupada também depende do espaçamento entre tons.</div>
+          </div>
+          <div id="tab-help" class="tab-panel" role="tabpanel" aria-labelledby="tab-help-button">
+            <div class="help-grid">
+              <article class="help-card"><h3>Como usar</h3><ul><li>Escolha uma técnica no menu.</li><li>Edite bits, Rb, fc, α ou Eb/N₀.</li><li>A página atualiza automaticamente.</li><li>Use “Gerar nova sequência” para sortear outros bits.</li><li>Abra as abas para alternar entre forma de onda, constelação e comparativo.</li></ul></article>
+              <article class="help-card"><h3>Memorial de cálculo</h3><p>M é o número de estados e k = log₂(M) é a quantidade de bits por símbolo. Rs = Rb/k; Tb = 1/Rb; Ts = 1/Rs; B ≈ (1+α)Rs. Os símbolos são normalizados para Es = 1 e Eb = Es/k.</p></article>
+              <article class="help-card"><h3>Leitura dos gráficos</h3><p>Os eixos indicam unidades. Na forma de onda, azul é o sinal ideal e laranja inclui ruído gaussiano. Na constelação, I e Q são as componentes do símbolo. Pontos sobrepostos são símbolos repetidos.</p></article>
+              <article class="help-card"><h3>Aplicações e modelos</h3><p>A descrição abaixo da técnica informa princípio e usos comuns, sem representar uma lista exclusiva. A QAM diferencial é uma variante didática; pulsos retangulares são usados para manter a demonstração simples.</p></article>
+              <article class="help-card"><h3>Limites e validação</h3><p>Use ao menos 8 bits, Rb e fc positivos, α entre 0 e 1, e até 50.000 bits. Se a portadora não couber na resolução de amostragem, reduza fc ou aumente Rb.</p></article>
+              <article class="help-card"><h3>Publicação e privacidade</h3><p>Esta página é estática e roda no navegador, sem enviar a sequência de bits a um servidor. Hospede o arquivo index.html em GitHub Pages, Netlify ou outro serviço de hospedagem estática para gerar um link público.</p></article>
+            </div>
+          </div>
+        </section>
+      </section>
+    </div>
+    <footer>MODLAB · Pavão Engenharia · Proprietário e criador: Josué Pavão · Simulação didática para fins educacionais</footer>
+  </main>
+
+  <script>
+    "use strict";
+    const schemes = [
+      {name:"ASK / OOK", order:2, key:"ask",
+        meaning:"Varia a amplitude da portadora; no OOK um dos bits desliga o sinal.",
+        uses:"Enlaces ópticos simples, RFID de baixo custo e controles infravermelhos."},
+      {name:"BFSK", order:2, key:"fsk",
+        meaning:"Representa 0 e 1 por duas frequências (tons) distintas.",
+        uses:"Telemetria, modems simples e comunicação de baixa velocidade."},
+      {name:"M-PSK (8-PSK)", order:8, key:"8psk",
+        meaning:"Usa oito fases possíveis, transportando 3 bits por símbolo.",
+        uses:"Enlaces digitais e satelitais quando há relação sinal-ruído adequada."},
+      {name:"BPSK", order:2, key:"bpsk",
+        meaning:"Usa duas fases separadas por 180° para representar os bits.",
+        uses:"Telemetria e canais ruidosos que exigem alta robustez."},
+      {name:"QPSK", order:4, key:"qpsk",
+        meaning:"Usa quatro fases; cada símbolo representa 2 bits.",
+        uses:"Redes celulares, satélite, Wi-Fi e enlaces digitais."},
+      {name:"DPSK", order:2, key:"dpsk",
+        meaning:"Codifica o bit pela mudança de fase em relação ao símbolo anterior.",
+        uses:"Enlaces que buscam simplificar a recuperação de referência de fase."},
+      {name:"DQPSK", order:4, key:"dqpsk",
+        meaning:"Variante diferencial de QPSK: os 2 bits indicam a transição de fase.",
+        uses:"Enlaces de rádio com demodulação diferencial."},
+      {name:"OQPSK", order:4, key:"oqpsk",
+        meaning:"Desloca os ramos I e Q por meio símbolo para limitar saltos de fase.",
+        uses:"Rádio via satélite e enlaces com amplificação eficiente."},
+      {name:"π/4-DQPSK", order:4, key:"pi4",
+        meaning:"Alterna duas constelações diferenciais deslocadas por π/4.",
+        uses:"Sistemas de rádio móvel, incluindo tecnologias legadas."},
+      {name:"MSK (h=0.5)", order:2, key:"msk",
+        meaning:"FSK de fase contínua com índice h=0,5 e envelope constante.",
+        uses:"Telemetria; GMSK, relacionada, foi utilizada em redes GSM."},
+      {name:"16-QAM", order:16, key:"qam16",
+        meaning:"Combina quatro níveis em I e quatro em Q, formando 16 estados e 4 bits/símbolo.",
+        uses:"Wi-Fi, redes celulares, TV digital e modems de banda larga."},
+      {name:"16-QAM diferencial", order:16, key:"dq-am",
+        meaning:"Variante ilustrativa que acumula diferencialmente a fase dos pontos 16-QAM.",
+        uses:"Demonstração de codificação diferencial; não representa padrão universal."}
+    ];
+    const $ = id => document.getElementById(id);
+    const colors = {navy:"#10263f", blue:"#2878b5", green:"#20a486", amber:"#e9a23b", grid:"#dce5ed", muted:"#718096", ink:"#20364b"};
+    let bits = [];
+    let seed = Math.floor(Math.random() * 0xffffffff);
+    let current = null;
+    let timer = null;
+
+    function rngFactory(initial) {
+      let state = initial >>> 0;
+      return () => {
+        state = (state + 0x6D2B79F5) >>> 0;
+        let t = state;
+        t = Math.imul(t ^ (t >>> 15), t | 1);
+        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    function freshBits(count) {
+      const random = rngFactory(seed);
+      bits = Array.from({length:count}, () => random() < 0.5 ? 0 : 1);
+    }
+    function gray(n) { return n ^ (n >> 1); }
+    function groupBits(input, k) {
+      const data = input.slice();
+      while (data.length % k) data.push(0);
+      const indices = [];
+      for (let i=0; i<data.length; i+=k) {
+        let value = 0;
+        for (let j=0; j<k; j++) value = (value << 1) | data[i+j];
+        indices.push(value);
+      }
+      return {data, indices};
+    }
+    function pointsFor(scheme, indices) {
+      const points = [];
+      let phase = 0;
+      const dqTable = [0, Math.PI/2, Math.PI, 3*Math.PI/2];
+      const pi4Table = [Math.PI/4, 3*Math.PI/4, -3*Math.PI/4, -Math.PI/4];
+      const levels = [-3,-1,3,1];
+      for (const index of indices) {
+        let p;
+        if (scheme.key === "ask") p = {re:index ? Math.SQRT2 : 0, im:0};
+        else if (scheme.key === "fsk" || scheme.key === "msk") p = index ? {re:0, im:1} : {re:1, im:0};
+        else if (scheme.key === "dpsk") { phase += index ? Math.PI : 0; p = {re:Math.cos(phase), im:Math.sin(phase)}; }
+        else if (scheme.key === "dqpsk") { phase += dqTable[gray(index)]; p = {re:Math.cos(phase), im:Math.sin(phase)}; }
+        else if (scheme.key === "pi4") { phase += pi4Table[gray(index)]; p = {re:Math.cos(phase), im:Math.sin(phase)}; }
+        else if (scheme.key === "qam16" || scheme.key === "dq-am") {
+          const i = levels[(index >> 2) & 3], q = levels[index & 3];
+          const amplitude = Math.hypot(i,q) / Math.sqrt(10);
+          if (scheme.key === "qam16") p = {re:i/Math.sqrt(10), im:q/Math.sqrt(10)};
+          else { phase += Math.atan2(q,i); p = {re:amplitude*Math.cos(phase), im:amplitude*Math.sin(phase)}; }
+        } else {
+          const order = scheme.order, angle = 2*Math.PI*gray(index)/order;
+          p = {re:Math.cos(angle), im:Math.sin(angle)};
+        }
+        points.push(p);
+      }
+      const meanPower = points.reduce((sum,p)=>sum+p.re*p.re+p.im*p.im,0)/points.length;
+      const scale = meanPower > 0 ? 1/Math.sqrt(meanPower) : 1;
+      return points.map(p=>({re:p.re*scale,im:p.im*scale}));
+    }
+    function makeEnvelope(scheme, points, rs, sps) {
+      const re = [], im = [];
+      if (scheme.key === "fsk" || scheme.key === "msk") {
+        let phase = 0;
+        for (const p of points) {
+          const tone = p.im > 0 ? rs/4 : -rs/4;
+          for (let n=0; n<sps; n++) {
+            if (scheme.key === "fsk") {
+              const local = n/(sps*rs);
+              const angle = 2*Math.PI*tone*local;
+              re.push(Math.cos(angle)); im.push(Math.sin(angle));
+            } else {
+              phase += 2*Math.PI*tone/(sps*rs);
+              re.push(Math.cos(phase)); im.push(Math.sin(phase));
+            }
+          }
+        }
+      } else if (scheme.key === "oqpsk") {
+        const delay = Math.floor(sps/2);
+        const qSamples = points.flatMap(p=>Array(sps).fill(p.im));
+        const iSamples = points.flatMap(p=>Array(sps).fill(p.re));
+        for (let n=0; n<iSamples.length; n++) {
+          re.push(iSamples[n]);
+          im.push(n < delay ? 0 : qSamples[n-delay]);
+        }
+      } else {
+        for (const p of points) {
+          for (let n=0; n<sps; n++) { re.push(p.re); im.push(p.im); }
+        }
+      }
+      return {re,im};
+    }
+    function metrics(scheme, points, rb, alpha) {
+      const k = Math.log2(scheme.order), rs = rb/k;
+      const es = points.reduce((sum,p)=>sum+p.re*p.re+p.im*p.im,0)/points.length;
+      return {k,rs,tb:1/rb,ts:1/rs,band:(1+alpha)*rs,es,eb:es/k,eff:k/(1+alpha)};
+    }
+    function normalNoise(random) {
+      const u1 = Math.max(random(), 1e-12), u2 = random();
+      return Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);
+    }
+    function readConfig() {
+      const count = Number($("bit-count").value), rb = Number($("bit-rate").value);
+      const fc = Number($("carrier").value), alpha = Number($("rolloff").value);
+      const ebn0 = Number($("ebn0").value);
+      if (!Number.isInteger(count) || count < 8 || count > 50000) throw new Error("Informe entre 8 e 50.000 bits inteiros.");
+      if (!Number.isFinite(rb) || rb <= 0) throw new Error("Rb deve ser um valor positivo.");
+      if (!Number.isFinite(fc) || fc <= 0) throw new Error("fc deve ser um valor positivo.");
+      if (!Number.isFinite(alpha) || alpha < 0 || alpha > 1) throw new Error("O roll-off α deve estar entre 0 e 1.");
+      if (!Number.isFinite(ebn0) || ebn0 < -30 || ebn0 > 60) throw new Error("Eb/N₀ deve estar entre -30 e 60 dB.");
+      return {count,rb,fc,alpha,ebn0};
+    }
+    function format(value, digits=3) {
+      return new Intl.NumberFormat("pt-BR",{maximumFractionDigits:digits}).format(value);
+    }
+    function metricCard(label, value, note) {
+      return `<div class="metric"><span>${label}</span><strong>${value}</strong><small>${note}</small></div>`;
+    }
+    function updateMetrics(scheme, m, config, pointCount) {
+      $("metrics").innerHTML =
+        metricCard("M · estados", scheme.order, scheme.name) +
+        metricCard("k · bits/símbolo", format(m.k,0), "k = log₂(M)") +
+        metricCard("Rs · baud", format(m.rs), "Rs = Rb/k") +
+        metricCard("B · estimada", `${format(m.band)} Hz`, "B ≈ (1+α)Rs") +
+        metricCard("Tb · bit", `${format(m.tb*1000,4)} ms`, "Tb = 1/Rb") +
+        metricCard("Ts · símbolo", `${format(m.ts*1000,4)} ms`, "Ts = 1/Rs") +
+        metricCard("Es · símbolo", format(m.es,4), "energia média normalizada") +
+        metricCard("Eb · bit", format(m.eb,4), `Eb = Es/k · ${format(config.ebn0,1)} dB · ${pointCount} símbolos`);
+    }
+    function setupCanvas(canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const width = Math.max(260, rect.width), height = Math.max(200, rect.height);
+      if (canvas.width !== Math.round(width*dpr) || canvas.height !== Math.round(height*dpr)) {
+        canvas.width = Math.round(width*dpr);
+        canvas.height = Math.round(height*dpr);
+      }
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      ctx.clearRect(0,0,width,height);
+      ctx.font = "11px Segoe UI, Arial";
+      return {ctx,width,height};
+    }
+    function axes(ctx, width, height, box, xTicks, yTicks, xLabel, yLabel, xFormat, yFormat) {
+      const {left=55,right=14,top=18,bottom=43} = box;
+      const plot = {x:left,y:top,w:width-left-right,h:height-top-bottom};
+      ctx.strokeStyle=colors.grid; ctx.fillStyle=colors.muted; ctx.lineWidth=1;
+      ctx.textAlign="center"; ctx.textBaseline="top";
+      for (const t of xTicks) {
+        const px=plot.x+t*(plot.w);
+        ctx.beginPath();ctx.moveTo(px,plot.y);ctx.lineTo(px,plot.y+plot.h);ctx.stroke();
+        ctx.fillText(xFormat(t),px,plot.y+plot.h+6);
+      }
+      ctx.textAlign="right";ctx.textBaseline="middle";
+      for (const t of yTicks) {
+        const py=plot.y+(1-t)*plot.h;
+        ctx.beginPath();ctx.moveTo(plot.x,py);ctx.lineTo(plot.x+plot.w,py);ctx.stroke();
+        ctx.fillText(yFormat(t),plot.x-7,py);
+      }
+      ctx.strokeStyle="#8ea1b1";
+      ctx.beginPath();ctx.moveTo(plot.x,plot.y);ctx.lineTo(plot.x,plot.y+plot.h);ctx.lineTo(plot.x+plot.w,plot.y+plot.h);ctx.stroke();
+      ctx.fillStyle=colors.ink;ctx.textAlign="center";ctx.textBaseline="bottom";
+      ctx.fillText(xLabel,plot.x+plot.w/2,height-3);
+      ctx.save();ctx.translate(14,plot.y+plot.h/2);ctx.rotate(-Math.PI/2);ctx.fillText(yLabel,0,0);ctx.restore();
+      return plot;
+    }
+    function drawBits(input, rs, scheme) {
+      const canvas=$("bits-chart"), {ctx,width,height}=setupCanvas(canvas);
+      const k=Math.log2(scheme.order), shown=Math.min(input.length,Math.max(k,12*k));
+      const duration=shown/(current.config.rb), maxT=Math.min(duration,12/rs);
+      const plot=axes(ctx,width,height,{},[0,.25,.5,.75,1],[0,.5,1],"Tempo da sequência (s)","Valor do bit",t=>format(t*maxT,4),t=>String(Math.round(t)));
+      const visible=input.slice(0,Math.max(1,Math.ceil(maxT*current.config.rb)));
+      ctx.strokeStyle=colors.blue;ctx.lineWidth=2;ctx.beginPath();
+      visible.forEach((bit,i)=>{
+        const x0=plot.x+(i/current.config.rb/maxT)*plot.w;
+        const x1=plot.x+((i+1)/current.config.rb/maxT)*plot.w;
+        const y=plot.y+(1-bit)*plot.h;
+        if(i===0)ctx.moveTo(x0,y);else ctx.lineTo(x0,y);
+        ctx.lineTo(x1,y);
+      });
+      ctx.stroke();
+    }
+    function drawWave(result, scheme, config, k) {
+      const canvas=$("wave-chart"), {ctx,width,height}=setupCanvas(canvas);
+      const sps=64, rs=config.rb/k, count=Math.min(result.points.length,12);
+      const sampleCount=count*sps, duration=count/rs;
+      const carrierLimit=sps*rs/2;
+      if(config.fc+rs/4>=carrierLimit) throw new Error(`fc (${format(config.fc)} Hz) excede Nyquist para esta resolução temporal. Reduza fc ou Rb.`);
+      const ebn0=10**(config.ebn0/10), variance=1/(2*k*ebn0);
+      const random=rngFactory(seed ^ 0xA5A5A5A5);
+      const ideal=[], noisy=[];
+      for(let n=0;n<sampleCount;n++){
+        const t=n/(sps*rs);
+        const carrier=2*Math.PI*config.fc*t;
+        const real=result.env.re[n], imag=result.env.im[n];
+        const value=real*Math.cos(carrier)-imag*Math.sin(carrier);
+        ideal.push(value);
+        noisy.push(value + normalNoise(random)*Math.sqrt(variance));
+      }
+      const amplitudeLimit=Math.max(1,...ideal.map(Math.abs),...noisy.map(Math.abs))*1.12;
+      const plot=axes(ctx,width,height,{},[0,.25,.5,.75,1],[0,.25,.5,.75,1],"Tempo (s)","Amplitude instantânea",t=>format(t*duration,4),t=>format((1-2*t)*amplitudeLimit,1));
+      function line(values,color,alpha=1) {
+        ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=color;ctx.lineWidth=1.6;ctx.beginPath();
+        values.forEach((value,i)=>{
+          const x=plot.x+i/(values.length-1)*plot.w;
+          const y=plot.y+(1-(value+amplitudeLimit)/(2*amplitudeLimit))*plot.h;
+          if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+        });
+        ctx.stroke();ctx.restore();
+      }
+      line(ideal,colors.blue);line(noisy,colors.amber,.8);
+      $("noise-legend").innerHTML=`<i style="background:var(--amber)"></i>Sinal recebido + AWGN · Eb/N₀ = ${format(config.ebn0,1)} dB`;
+      $("wave-title").textContent=`2. Sinal modulado em passabanda — ${scheme.name}`;
+    }
+    function drawConstellation(points, scheme) {
+      const canvas=$("constellation"), {ctx,width,height}=setupCanvas(canvas);
+      const maxV=Math.max(1,...points.flatMap(p=>[Math.abs(p.re),Math.abs(p.im)]))*1.18;
+      const plot=axes(ctx,width,height,{left:58,right:20,top:28,bottom:48},[0,.25,.5,.75,1],[0,.25,.5,.75,1],"I · componente em fase","Q · componente em quadratura",t=>format((2*t-1)*maxV,2),t=>format((1-2*t)*maxV,2));
+      const cx=plot.x+plot.w/2,cy=plot.y+plot.h/2;
+      ctx.strokeStyle="#8ea1b1";ctx.beginPath();ctx.moveTo(plot.x,cy);ctx.lineTo(plot.x+plot.w,cy);ctx.moveTo(cx,plot.y);ctx.lineTo(cx,plot.y+plot.h);ctx.stroke();
+      const observed=new Map();
+      for(const p of points) observed.set(`${p.re.toFixed(5)},${p.im.toFixed(5)}`,p);
+      for(const p of points) {
+        const x=cx+p.re/maxV*plot.w/2, y=cy-p.im/maxV*plot.h/2;
+        ctx.fillStyle=colors.blue;ctx.globalAlpha=.35;ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill();
+      }
+      ctx.globalAlpha=1;
+      for(const p of observed.values()) {
+        const x=cx+p.re/maxV*plot.w/2, y=cy-p.im/maxV*plot.h/2;
+        ctx.strokeStyle=colors.amber;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,7,0,Math.PI*2);ctx.stroke();
+      }
+      $("iq-title").textContent=`Constelação I/Q — ${scheme.name} · ${observed.size} estados observados`;
+      $("iq-note").textContent = scheme.key==="fsk"
+        ? "BFSK: I/Q representa duas funções ortogonais (tons), não uma constelação PSK convencional."
+        : scheme.key==="dpsk" || scheme.key==="dqpsk" || scheme.key==="pi4" || scheme.key==="dq-am"
+          ? "Modulação diferencial: a informação está na mudança entre símbolos consecutivos; os pontos podem depender do histórico da sequência."
+          : "Círculos laranja marcam estados distintos vistos na sequência aleatória; pontos azuis sobrepostos indicam repetições.";
+    }
+    function drawBars(canvasId, values, names, color, yLabel, formatter) {
+      const canvas=$(canvasId),{ctx,width,height}=setupCanvas(canvas);
+      const plot=axes(ctx,width,height,{left:54,right:12,top:18,bottom:78},[0,.5,1],[0,.25,.5,.75,1],"Técnica de modulação",yLabel,t=>t===1?"": "",t=>formatter(t*Math.max(...values)*1.12));
+      const max=Math.max(...values)*1.12, slot=plot.w/values.length, barW=slot*.62;
+      values.forEach((value,i)=>{
+        const h=value/max*plot.h,x=plot.x+i*slot+(slot-barW)/2,y=plot.y+plot.h-h;
+        ctx.fillStyle=color;ctx.fillRect(x,y,barW,h);
+        ctx.fillStyle=colors.ink;ctx.font="9px Segoe UI, Arial";ctx.textAlign="center";ctx.textBaseline="bottom";
+        ctx.fillText(formatter(value),x+barW/2,y-3);
+        ctx.save();ctx.translate(x+barW/2,plot.y+plot.h+7);ctx.rotate(-Math.PI/4);ctx.textAlign="right";ctx.textBaseline="middle";ctx.fillStyle=colors.muted;ctx.font="9px Segoe UI, Arial";ctx.fillText(names[i],0,0);ctx.restore();
+      });
+    }
+    function render() {
+      try {
+        const config=readConfig(), scheme=schemes[Number($("scheme").value)];
+        if(bits.length!==config.count) freshBits(config.count);
+        const grouped=groupBits(bits,Math.log2(scheme.order));
+        const points=pointsFor(scheme,grouped.indices);
+        const m=metrics(scheme,points,config.rb,config.alpha);
+        const env=makeEnvelope(scheme,points,m.rs,64);
+        current={config,scheme,points,env};
+        updateMetrics(scheme,m,config,points.length);
+        drawBits(grouped.data,m.rs,scheme);
+        drawWave(current,scheme,config,m.k);
+        drawConstellation(points,scheme);
+        const all=schemes.map(s=>{
+          const g=groupBits(bits,Math.log2(s.order)),p=pointsFor(s,g.indices);
+          return metrics(s,p,config.rb,config.alpha);
+        });
+        drawBars("rs-chart",all.map(x=>x.rs),schemes.map(s=>s.name),colors.blue,"Símbolos por segundo (baud)",v=>format(v,0));
+        drawBars("eff-chart",all.map(x=>x.eff),schemes.map(s=>s.name),colors.green,"Eficiência estimada (bit/s/Hz)",v=>format(v,2));
+        $("error").classList.remove("show");
+        $("status").textContent="● SIMULAÇÃO ATUALIZADA";
+        $("status").style.color="var(--green)";
+        $("scheme-info").innerHTML=`<h3>${scheme.name}</h3><p><b>Significado:</b> ${scheme.meaning}</p><p><b>Aplicações comuns:</b> ${scheme.uses}</p>`;
+      } catch(error) {
+        $("error").textContent=error.message;
+        $("error").classList.add("show");
+        $("status").textContent="! VERIFIQUE OS PARÂMETROS";
+        $("status").style.color="var(--red)";
+      }
+    }
+    function scheduleRender() {
+      clearTimeout(timer);
+      $("status").textContent="◌ ATUALIZANDO...";
+      $("status").style.color="var(--amber)";
+      timer=setTimeout(render,300);
+    }
+    $("scheme").innerHTML=schemes.map((s,i)=>`<option value="${i}">${s.name}</option>`).join("");
+    $("scheme").value=String(schemes.findIndex(s=>s.key==="qpsk"));
+    ["scheme","bit-count","bit-rate","carrier","rolloff","ebn0"].forEach(id=>{
+      $(id).addEventListener(id==="scheme"?"change":"input",scheduleRender);
+    });
+    $("new-bits").addEventListener("click",()=>{seed=Math.floor(Math.random()*0xffffffff);bits=[];render();});
+    document.querySelectorAll(".tab-button").forEach(button=>{
+      button.addEventListener("click",()=>{
+        document.querySelectorAll(".tab-button").forEach(b=>b.setAttribute("aria-selected",String(b===button)));
+        document.querySelectorAll(".tab-panel").forEach(panel=>panel.classList.toggle("active",panel.id===button.getAttribute("aria-controls")));
+        if(current) requestAnimationFrame(renderChartsOnly);
+      });
+    });
+    function renderChartsOnly() {
+      if(!current)return;
+      const {config,scheme,points,env}=current,m=metrics(scheme,points,config.rb,config.alpha);
+      drawBits(groupBits(bits,m.k).data,m.rs,scheme);
+      drawWave(current,scheme,config,m.k);
+      drawConstellation(points,scheme);
+      const all=schemes.map(s=>metrics(s,pointsFor(s,groupBits(bits,Math.log2(s.order)).indices),config.rb,config.alpha));
+      drawBars("rs-chart",all.map(x=>x.rs),schemes.map(s=>s.name),colors.blue,"Símbolos por segundo (baud)",v=>format(v,0));
+      drawBars("eff-chart",all.map(x=>x.eff),schemes.map(s=>s.name),colors.green,"Eficiência estimada (bit/s/Hz)",v=>format(v,2));
+    }
+    window.addEventListener("resize",()=>{clearTimeout(timer);timer=setTimeout(renderChartsOnly,120);});
+    freshBits(Number($("bit-count").value));
+    render();
+  </script>
+</body>
+</html>
